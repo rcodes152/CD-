@@ -1,0 +1,685 @@
+1a.%{ 
+#include <stdio.h>
+int lines=0,spaces=0,words=0,chars=0;
+%}
+%%
+\n {lines++;}
+\t {spaces+=4;}
+[ ] {spaces++;}
+[^ \t\n#]+ {words++;chars+=yyleng;}
+"#" {return 0;}
+%%
+int yywrap(){
+return 1;
+}
+int main()
+{
+printf ("enter the string \n");
+yylex();
+printf ("lines %d, spaces %d , words %d , chars %d ",lines,spaces,words,chars);
+return 0;
+}1b.l 
+%{
+#include "y.tab.h"
+%}
+%%
+"a" {return 'a';}
+"b" {return 'b';}
+"c" {return 'c';}
+\n {return 0;}
+. {yytext[0];}
+%%
+int yywrap(){
+return 1;
+}1b.y%{
+#include <stdio.h>
+#include <stdlib.h>
+int error=0;
+int yyerror();
+int yylex();
+%}
+
+%%
+S: A B
+;
+A:'a' A 'b'
+|
+;
+B:'b' B 'c'
+|
+;
+%%
+
+int yyerror(){
+error=1;
+return 1;
+}
+
+int main(){
+printf("eneter the text \n");
+yyparse();
+if (error){
+printf("invalid \n");
+}
+else 
+{
+printf("valid \n");
+}
+return 1;
+}-----------------------------------2a.l%{
+#include <stdio.h>
+#include <stdlib.h>
+int p=0,n=0,pf=0,nf=0;
+%}
+num [0-9]+
+pn \+?{num}
+nn -{num}
+pfr \+?{num}\.{num}?|\+?\.{num}
+nfr -?{num}\.{num}?|-\.{num}
+
+%%
+{pn} {p++;}
+{nn} {n++;}
+{pfr} {pf++;}
+{nfr} {nf++;}
+{pfr}\/{pfr} |
+{nfr}\/{nfr} {pf++;}
+{nfr}\/{pfr} |
+{pfr}\/{nfr} {nf++;}
+[ \t] {}
+\n {return 0;}
+. ECHO;
+%%
+int yywrap(){
+return 1;
+}
+int main()
+{
+printf("eneter the \n");
+yylex();
+printf ("pos %d, neg %d, posf %d, negf %d \n",p,n,pf,nf);
+return 0;
+} 
+
+2b.l
+%{
+#include "y.tab.h"
+%}
+
+%%
+[0-9]+ {yylval=atoi(yytext);return NUM;}
+[-+*\/()] {return yytext[0];}
+\n {return 0;}
+[ \t] {}
+. {return yytext[0];}
+%%
+int yywrap(){
+return 1;
+} 
+
+2b.y
+%{
+#include <stdio.h>
+#include <stdlib.h>
+int error=0;
+int yylex();
+int yyerror();
+%}
+%token NUM
+%left '-' '+'
+%left '*' '/'
+
+%%
+S:I {if (!error) {printf("result is %d \n",$$);}}
+;
+I: I '+' I {$$=$1+$3;}
+| I '-' I {$$=$1-$3;}
+| I '*' I {$$=$1*$3;}
+| I '/' I { if ($3==0) {yyerror();} else { $$=$1/$3;}}
+|'(' I ')' {$$=$2;}
+| NUM {$$=$1;}
+| '-' NUM {$$=-$1;}
+;
+%%
+int yyerror(){
+error=1;
+return 1;
+}
+int main()
+{
+printf("enter the \n");
+yyparse();
+if (error){
+printf("invalid");
+}
+else{
+printf ("valid ");
+} return 1;
+}---------------------------
+3a.l 
+%{
+#include <stdio.h>
+#include <stdlib.h>
+int count=0;
+%}
+%%
+"//".* {count++;fprintf(yyout," ");}
+"/*"[a-zA-Z0-9 \t\n]*"*/" {count++;fprintf(yyout," ");}
+. {fprintf (yyout,"%s",yytext);}
+\n {fprintf (yyout , "\n");}
+%%
+int yywrap(){return 1;}
+int main(){
+yyin=fopen("v.txt","r");
+yyout=fopen("v1.txt","w");
+yylex();
+printf("number of lines %d \n",count);
+return 1;
+}
+3b.l
+%{
+#include "y.tab.h"
+%}
+
+%%
+"for" {return FOR;}
+"("  {return LPAREN;}
+")"	{return RPAREN;}
+"{" {return LF;}
+"}" {return RF;}
+";"  {return ';';}
+"," {return ',' ;}
+"=" {return '=' ;}
+"+" {return '+';}
+"-" {return '-';}
+">" {return '>';}
+"<" {return '>';}
+"==" {return EQ;}
+">=" {return GE;}
+"<=" {return LE;}
+"+=" {return ADDQ;}
+"-=" {return SUBQ;}
+"++" {return INC;}
+"--" {return DEC;}
+[a-zA-Z]+ {return ALPH;}
+[0-9]+ {return NUM;}
+\n {return 0;}
+[ \t] {}
+. {}
+%%
+int yywrap()
+{
+return 1;
+}
+3b.y 
+
+%{
+#include <stdio.h>
+#include <stdlib.h>
+int count=0;
+int yylex();
+int yyerror();
+int error=0;
+%}
+
+%token FOR LPAREN RPAREN LF RF EQ GE LE INC DEC ALPH NUM SUBQ ADDQ SPACE
+
+%%
+I: FOR A B {count++;}
+;
+A: LPAREN E ';' E ';' E RPAREN
+;
+E: ALPH Z ALPH
+| ALPH Z NUM
+| ALPH U
+|
+;
+Z:'='
+| '>'
+| '<'
+| GE
+| LE
+| EQ
+| '+'
+| '-'
+| SUBQ
+| ADDQ
+;
+U: INC
+| DEC
+;
+B: LF B RF
+| I
+| ALPH I
+| ALPH
+|
+;
+%%
+int yyerror(){
+error=1;
+return 1;
+}
+int main()
+{
+printf("enter \n");
+yyparse();
+if (error){
+printf ("invalid \n");
+}
+else {
+printf ("number of foorss %d \n",count);
+}
+return 0;
+}
+4a.l
+%{
+#include <stdio.h>
+#include <stdlib.h>
+int op=0,id=0,key=0;
+%}
+%%
+"int"|"main()"|"int"|"float"|"char"|"return"|"printf"|"if"|"else" {key++;}
+[a-zA-Z_][a-zA-Z0-9_]* {id++;}
+[\+\-\/\*\&\!\=] {op++;}
+[\(\)\{\}] {}
+[;] {}
+[,] {}
+[ \t\n]+ {}
+# {return 0;}
+[.]+ {printf ("ovalid occurenc %s \n", yytext);}
+%%
+int yywrap()
+{
+return 1;
+}
+int main(){
+yyin=fopen("c.c","r");
+yylex();
+printf("number of op, key,id %d %d %d",op,key,id);
+return 0;
+}4b.l%{
+#include "y.tab.h"
+%}
+%% 
+"if" {return IF;}
+[(] {return LAPREN;}
+[)]	{return RPAREN;}
+[{]	{return LF;}
+[}]	{return RF;}
+[a-z]+	{return EXP;}
+[ ] {return SPACE;}
+\n {return 0;}
+%%
+int yywrap()
+{
+return 1;
+}
+
+4b.y%{
+#include <stdio.h>
+#include <stdlib.h>
+int yyerror();
+int error=0;
+int yylex();
+int count=0;
+%}
+%token IF LPAREN RPAREN LF RF EXP SPACE
+%%
+I: IF A B {count++;}
+;
+A:LPAREN EXP RPAREN
+;
+B:LF B RF
+| I
+| EXP
+| EXP SPACE I
+|
+;
+%% 
+int main()
+{
+printf("enter the loop \n");
+yyparse();
+if (error){
+printf("invalid");
+}
+else{
+printf("nymber of loop %d \n", count);
+}
+return 0;
+}
+int yyerror(){
+error=1;
+return 1;
+}----------------5.l%{
+#include "y.tab.h"
+%}
+%%
+"int" {return INT;}
+"float" {return FLOAT;}
+"double" {return DOUBLE;}
+"char" {return CHAR;}
+[a-zA-Z_][a-zA-Z0-9_]* {yylval.str=strdup(yytext); return IDENTIFIER;}
+"[" {return '[';}
+"]" {return ']';}
+[0-9]+ {return NUM;}
+[ \t\n] {}
+"," {return ',';}
+";" {return ';';}
+. {}
+%%
+int yywrap(){
+return 1;
+} 
+5.y 
+%{
+#include <stdio.h>
+#include <stdlib.h>
+int yylex();
+void yyerror (const char *s);
+int count=0;
+%}
+
+%union
+{
+char* str;
+}
+%token <str> IDENTIFIER
+%token NUM INT FLOAT DOUBLE CHAR
+%%
+program: declarations
+;
+declarations: declarations declaration ';'
+| declaration ';'
+;
+declaration: type var_list
+;
+type: INT
+| FLOAT 
+| CHAR
+| DOUBLE
+;
+var_list: var_list ',' var
+| var
+;
+var: identifier
+| identifier '[' ']' 
+| identifier '[' NUM ']'
+;
+identifier: IDENTIFIER 
+{
+count++;
+}
+;
+%%
+void yyerror (const char* s)
+{
+fprintf(stderr,"errror is %s \n",s);
+}
+int main()
+{
+printf("enter the \n");
+yyparse();
+printf("numer %d \n",count);
+return 0;
+} 
+---------------------
+6.l 
+%{
+#include "y.tab.h"
+%}
+%%
+[0-9]+ {yylval.sym=(char)yytext[0];return NUM;}
+[a-zA-Z]+ {yylval.sym=(char)yytext[0];return LETTER;}
+\n {return 0;}
+";" {return ';';}
+"," {return ',';}
+. {return yytext[0];}
+%%
+int yywrap(){
+return 1;
+} 
+6.y 
+%{
+#include <stdio.h>
+#include <stdlib.h>
+int yylex();
+void yyerror(const char* s);
+struct incod{
+char opd1,opd2,opr;
+}code[20];
+int ind=0;
+char temp='T';
+char AddToTable(char,char,char);
+void generateCode();
+%}
+%union
+{
+char sym;
+}
+%token <sym> LETTER NUM
+%type <sym> exp
+%left '+' '-'
+%left '*' '/'
+
+%%
+statements: statements statement
+| statement 
+;
+statement: LETTER '=' exp ';' {AddToTable($1,$3,'=');}
+| exp ';'
+;
+exp: exp '+' exp {$$=AddToTable($1,$3,'+');}
+| exp '-' exp {$$=AddToTable($1,$3,'-');}
+| exp '/' exp {$$=AddToTable($1,$3,'/');}
+| exp '*' exp {$$=AddToTable($1,$3,'*');}
+| '(' exp ')' {$$=$2;}
+| LETTER {$$=$1;}
+| NUM {$$=$1;}
+;
+%%
+
+char AddToTable (char opd1,char opd2,char opr){
+code[ind++]= (struct incod){ opd1,opd2,opr};
+char retTemp=temp;
+if (temp<'Z') temp++;
+else exit(1);
+return retTemp;
+}
+void generateCode()
+{
+printf ("3 address code \n");
+for (int i=0;i<ind;i++)
+{
+printf ("%c=%c %c %c \n", temp-ind+i,code[i].opd1,code[i].opr,code[i].opd2);
+}
+printf ("quadruple \n");
+for (int i=0;i<ind;i++)
+{
+printf ("%d \t %c \t%c \t %c \n",i,code[i].opr,code[i].opd1,code[i].opd2);
+}
+}
+void yyerror(const char* s){
+printf ("error is %s",s);
+}
+int main()
+{
+printf("enter \n");
+if (yyparse()==0)  generateCode();
+return 0;
+}------------7.l%{
+#include "y.tab.h"
+%}
+
+%%
+^"#include".+[\n] {return INCLUDE;} //1
+[ \t] {} //2
+[\n] {yylineno++;} //3
+"int" {return TYPE;} //4
+"float" {return TYPE;} //5 
+"char" {return TYPE;} //6
+"void" {return VOID;} //7
+"printf" {return PRINTF;} //8
+"return" {return RETURN;} //9
+"//".*[\n] {} //10
+"/*"[.|\n]*"*/" {} //11
+[a-zA-Z_][a-zA-Z_0-9]* {return IDENTIFIER;} //12
+[0-9]+ {return NUM;} //13
+";" {return ';';} //14
+"," {return ',';} //15
+"{" {return '{';} //16
+"}" {return '}';} //17
+"(" {return '(';} //18
+")" {return ')';} //19
+"=" {return '=';} //20
+[\-\+\/\*] {return BASIC_OP;} //21
+\"([^\\"]|\\.)*\" {return STRING_LITERAL;}
+. {return yytext[0];}
+%%
+int yywrap()
+{
+return 1;
+}7.y 
+
+%{
+#include <stdio.h>
+#include <stdlib.h>
+extern FILE* yyin;
+extern char* yytext;
+extern int yylineno;
+int yylex();
+void yyerror(const char* s);
+%}
+%token INCLUDE TYPE VOID BASIC_OP STRING_LITERAL IDENTIFIER NUM PRINTF RETURN 
+%left BASIC_OP '='
+
+%%
+program: headers definitions
+; //1
+headers: headers header
+| header
+; //2
+header: INCLUDE
+; //3
+definitions: definitions definition
+| definition //4
+;
+definition: TYPE IDENTIFIER '(' arg_list ')' '{' body RETURN expr ';' '}'
+| TYPE IDENTIFIER '(' arg_list ')' '{' RETURN expr ';' '}'
+| VOID IDENTIFIER '(' arg_list ')' '{' body  ';' '}'
+; //5 
+arg_list: arg_list ',' TYPE IDENTIFIER
+| TYPE IDENTIFIER
+|
+; //6
+identifier_list: identifier_list ',' IDENTIFIER 
+| IDENTIFIER 
+; //7
+body: body stmt
+| stmt
+;
+stmt: declarations
+| assignment
+| PRINTF '(' STRING_LITERAL ',' identifier_list ')' ';'
+;
+declarations:TYPE identifier_list ';'
+;
+assignment: IDENTIFIER '=' expr ';'
+;
+expr: expr BASIC_OP expr
+| expr '=' expr
+| IDENTIFIER
+| NUM
+;
+%%
+void yyerror (const char* s)
+{
+printf ("error %s \n",s);
+}
+int main()
+{
+yyin=fopen("file.txt","r");
+if (yyparse()==0) printf("parsing successfull");
+else printf ("parsing unsucessfull");
+fclose(yyin);
+return 0;
+}--------------------------------8.l 
+%{
+#include "y.tab.h"
+%}
+
+%%
+"int" {return INT;}
+"main" {return MAIN;}
+"printf" {return PRINTF;}
+"+" {return '+';}
+\"[^"]*\" {yylval.str=strdup(yytext);return STRING;}
+[a-zA-Z_][a-zA-Z0-9_]* {yylval.id=strdup(yytext); return ID;}
+[0-9]+ {yylval.num=atoi(yytext); return NUM;}
+[ \t] {}
+\n {return 0;}
+. {return yytext[0];}
+%%
+int yywrap()
+{
+return 1;
+}8.y%{
+#include <stdio.h>
+#include <stdlib.h>
+int yylex();
+extern int yylineno;
+void yyerror(const char* s)
+{
+printf ("error in line %s %d \n",s,yylineno);
+exit(1);
+}
+%}
+%union{
+char* str;
+int num;
+char* id;
+}
+
+%token <str> STRING
+%token <id> ID
+%token <num> NUM
+%token INT PRINTF MAIN
+
+%start program
+
+%%
+program: INT MAIN '(' ')' '{' stmt_list  '}'
+{
+printf (" data\n");
+printf (" .LC0: String \"SUM %%d \" \n");
+printf (" text\n");
+printf ("global main \n");
+printf ("main: ");
+}
+;
+stmt_list: stmt
+| stmt_list stmt
+;
+
+stmt: INT ID '=' NUM ';' 
+{ printf (" movel $%d, %s \n",$4,$2);
+}
+| ID '='ID '+' ID ';'
+{ printf (" movl %s,%%eax\n",$3);
+printf (" addl %s,%%eax\n",$5);
+printf (" movl %%eax,%s\n",$1);
+}
+| PRINTF '(' STRING ',' ID ')' ';'
+{ printf (" movl %s,%%edi\n",$5);
+printf (" .LC0, %%rsi \n");
+printf(" call printf \n");
+}
+;
+%%
+
+int main()
+{
+printf ("assembly language \n");
+yyparse();
+return 0;
+}
